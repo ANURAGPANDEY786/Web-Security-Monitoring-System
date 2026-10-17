@@ -429,7 +429,3 @@ SIEM-Lite was inspired by enterprise SIEM platforms including Microsoft Sentinel
 This project was developed as a cybersecurity portfolio application to demonstrate SOC workflows, detection engineering, threat intelligence, incident correlation, and analyst investigation concepts.
 
 ---
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
