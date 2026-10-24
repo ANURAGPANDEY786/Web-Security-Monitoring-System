@@ -13,6 +13,7 @@ import {
     Toolbar,
     Typography,
 } from "@mui/material";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -115,6 +116,16 @@ export default function AppLayout({ children, title }: Props) {
                         </ListItemIcon>
                         <ListItemText primary="Log Ingestion" />
                     </ListItemButton>
+                    <ListItemButton
+    component={Link}
+    to="/url-scanner"
+    selected={location.pathname === "/url-scanner"}
+>
+    <ListItemIcon sx={{ color: "#c4b5fd" }}>
+        <TravelExploreIcon />
+    </ListItemIcon>
+    <ListItemText primary="URL Scanner" />
+</ListItemButton>
 
                     <ListItemButton component={Link} to="/iocs" selected={location.pathname === "/iocs"}>
                         <ListItemIcon sx={{ color: "#fbbf24" }}>

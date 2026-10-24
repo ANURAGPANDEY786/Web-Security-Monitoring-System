@@ -32,12 +32,13 @@ public class IndicatorOfCompromiseService {
      * @param request IOC creation request
      * @return saved IOC
      */
-    public IndicatorOfCompromise createIoc(IndicatorOfCompromiseRequest request) {
+    public IndicatorOfCompromise createIoc(IndicatorOfCompromiseRequest request , String ownerUsername) {
         validateRequest(request);
         validateUniqueValue(request.getValue());
 
         IndicatorOfCompromise ioc = new IndicatorOfCompromise();
         applyRequestToIoc(request, ioc);
+        ioc.setOwnerUsername(ownerUsername);
         ioc.setActive(true);
 
         return indicatorOfCompromiseRepository.save(ioc);
@@ -48,9 +49,9 @@ public class IndicatorOfCompromiseService {
      *
      * @return list of IOCs
      */
-    public List<IndicatorOfCompromise> getAllIocs() {
-        return indicatorOfCompromiseRepository.findAll();
-    }
+    public List<IndicatorOfCompromise> getAllIocs(String ownerUsername) {
+    return indicatorOfCompromiseRepository.findByOwnerUsername(ownerUsername);
+}
 
     /**
      * Returns one IOC by ID.
@@ -58,10 +59,9 @@ public class IndicatorOfCompromiseService {
      * @param id IOC ID
      * @return matching IOC
      */
-    public IndicatorOfCompromise getIocById(Long id) {
-        return indicatorOfCompromiseRepository.findById(id)
-                .orElseThrow(() -> new IocNotFoundException(id));
-    }
+   public IndicatorOfCompromise getIocById(Long id, String ownerUsername) {
+    return getOwnedIoc(id, ownerUsername);
+}
 
     /**
      * Updates an existing IOC.
@@ -70,10 +70,10 @@ public class IndicatorOfCompromiseService {
      * @param request update request
      * @return updated IOC
      */
-    public IndicatorOfCompromise updateIoc(Long id, IndicatorOfCompromiseRequest request) {
+    public IndicatorOfCompromise updateIoc(Long id, IndicatorOfCompromiseRequest request, String ownerUsername) {
         validateRequest(request);
 
-        IndicatorOfCompromise existingIoc = getIocById(id);
+        IndicatorOfCompromise existingIoc = getIocById(id, ownerUsername);
 
         indicatorOfCompromiseRepository.findByValue(request.getValue())
                 .filter(ioc -> !ioc.getId().equals(id))
@@ -92,8 +92,8 @@ public class IndicatorOfCompromiseService {
      * @param id IOC ID
      * @return enabled IOC
      */
-    public IndicatorOfCompromise enableIoc(Long id) {
-        IndicatorOfCompromise ioc = getIocById(id);
+    public IndicatorOfCompromise enableIoc(Long id, String ownerUsername) {
+        IndicatorOfCompromise ioc = getIocById(id, ownerUsername);
         ioc.setActive(true);
         return indicatorOfCompromiseRepository.save(ioc);
     }
@@ -104,8 +104,8 @@ public class IndicatorOfCompromiseService {
      * @param id IOC ID
      * @return disabled IOC
      */
-    public IndicatorOfCompromise disableIoc(Long id) {
-        IndicatorOfCompromise ioc = getIocById(id);
+    public IndicatorOfCompromise disableIoc(Long id, String ownerUsername) {
+        IndicatorOfCompromise ioc = getIocById(id, ownerUsername);
         ioc.setActive(false);
         return indicatorOfCompromiseRepository.save(ioc);
     }
@@ -115,10 +115,21 @@ public class IndicatorOfCompromiseService {
      *
      * @param id IOC ID
      */
-    public void deleteIoc(Long id) {
-        IndicatorOfCompromise ioc = getIocById(id);
+    public void deleteIoc(Long id, String ownerUsername) {
+        IndicatorOfCompromise ioc = getIocById(id, ownerUsername);
         indicatorOfCompromiseRepository.delete(ioc);
     }
+
+    private IndicatorOfCompromise getOwnedIoc(
+        Long id, String ownerUsername) {
+
+    return indicatorOfCompromiseRepository
+            .findByIdAndOwnerUsername(id, ownerUsername)
+            .orElseThrow(() ->
+                    new org.springframework.web.server.ResponseStatusException(
+                            org.springframework.http.HttpStatus.NOT_FOUND,
+                            "IOC not found"));
+}
 
     /**
      * Applies request fields to an IOC entity.

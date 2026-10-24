@@ -14,6 +14,8 @@ public class Alert {
     private Long id;
 
     private LocalDateTime timestamp;
+    @Column
+private String ownerUsername;
 
     private String alertType;
 
@@ -78,6 +80,9 @@ public class Alert {
     public Long getId() {
         return id;
     }
+    public String getOwnerUsername() {
+    return ownerUsername;
+}
 
     public LocalDateTime getTimestamp() {
         return timestamp;
@@ -146,6 +151,10 @@ public class Alert {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public void setOwnerUsername(String ownerUsername) {
+    this.ownerUsername = ownerUsername;
+}
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;

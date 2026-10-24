@@ -13,6 +13,13 @@ import java.util.Optional;
 public interface IndicatorOfCompromiseRepository extends JpaRepository<IndicatorOfCompromise, Long> {
 
     Optional<IndicatorOfCompromise> findByValue(String value);
+    List<IndicatorOfCompromise> findByOwnerUsername(String ownerUsername);
+
+java.util.Optional<IndicatorOfCompromise> findByIdAndOwnerUsername(
+        Long id, String ownerUsername);
+
+java.util.Optional<IndicatorOfCompromise> findByValueAndOwnerUsername(
+        String value, String ownerUsername);
 
     boolean existsByValue(String value);
 

@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -41,51 +42,60 @@ public class AlertController {
 
     @Operation(summary = "Retrieve alerts with optional filtering")
     @GetMapping
-    public Page<Alert> getAlerts(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String assignedTo,
-            @RequestParam(required = false) String mitreTechnique,
-            @RequestParam(required = false) Integer minRiskScore,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+public Page<Alert> getAlerts(
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String assignedTo,
+        @RequestParam(required = false) String mitreTechnique,
+        @RequestParam(required = false) Integer minRiskScore,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Authentication authentication) {
 
-        Specification<Alert> specification = Specification
-                .where(AlertSpecification.hasStatus(status))
-                .and(AlertSpecification.hasAssignedTo(assignedTo))
-                .and(AlertSpecification.hasMitreTechnique(mitreTechnique))
-                .and(AlertSpecification.hasMinimumRiskScore(minRiskScore));
+    Specification<Alert> specification = Specification
+            .where(AlertSpecification.hasStatus(status))
+            .and(AlertSpecification.hasAssignedTo(assignedTo))
+            .and(AlertSpecification.hasMitreTechnique(mitreTechnique))
+            .and(AlertSpecification.hasMinimumRiskScore(minRiskScore))
+            .and((root, query, cb) ->
+                    cb.equal(
+                            root.get("ownerUsername"),
+                            authentication.getName()
+                    ));
 
-        return alertRepository.findAll(
-                specification,
-                PageRequest.of(
-                        page,
-                        size,
-                        Sort.by(Sort.Direction.DESC, "riskScore")
-                )
-        );
-    }
+    return alertRepository.findAll(
+            specification,
+            PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "riskScore")
+            )
+    );
+}
 
-    @Operation(summary = "Retrieve related security events for an alert")
-    @GetMapping("/{id}/related-events")
-    public List<SecurityEvent> getRelatedEvents(@PathVariable Long id) {
-        Alert alert = alertRepository.findById(id)
-                .orElseThrow(() -> new AlertNotFoundException(id));
+@Operation(summary = "Retrieve related security events for an alert")
+@GetMapping("/{id}/related-events")
+public List<SecurityEvent> getRelatedEvents(
+        @PathVariable Long id,
+        Authentication authentication) {
 
-        return securityEventRepository.findBySourceIpAndUsernameAndEventType(
-                alert.getSourceIp(),
-                alert.getUsername(),
-                alert.getEventType()
-        );
-    }
+    Alert alert = getOwnedAlert(id, authentication);
+
+   return securityEventRepository
+    .findByOwnerUsernameAndSourceIpAndUsernameAndEventType(
+        authentication.getName(),
+        alert.getSourceIp(),
+        alert.getUsername(),
+        alert.getEventType()
+    );
+}
 
     @Operation(summary = "Assign analyst to an alert")
     @PutMapping("/{id}/assign")
     public Alert assignAnalyst(@PathVariable Long id,
                                @RequestParam String analyst,
                                Authentication authentication) {
-
-        Alert alert = alertRepository.findById(id)
-                .orElseThrow(() -> new AlertNotFoundException(id));
+                Alert alert = getOwnedAlert(id, authentication);
+            
 
         alert.setAssignedAnalyst(analyst);
         alert.setUpdatedAt(LocalDateTime.now());
@@ -109,15 +119,14 @@ public class AlertController {
 
         if (!status.equals("OPEN")
                 && !status.equals("INVESTIGATING")
-                && !status.equals("CLOSED")) {
+                && !status.equals("RESOLVED")) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Invalid status. Use OPEN, INVESTIGATING, or CLOSED."
+                    "Invalid status. Use OPEN, INVESTIGATING, or RESOLVED."
             );
         }
 
-        Alert alert = alertRepository.findById(id)
-                .orElseThrow(() -> new AlertNotFoundException(id));
+        Alert alert = getOwnedAlert(id, authentication);
 
         alert.setStatus(status);
         alert.setUpdatedAt(LocalDateTime.now());
@@ -139,8 +148,7 @@ public class AlertController {
                              @RequestParam String note,
                              Authentication authentication) {
 
-        Alert alert = alertRepository.findById(id)
-                .orElseThrow(() -> new AlertNotFoundException(id));
+       Alert alert = getOwnedAlert(id, authentication);
 
         alert.setNotes(note);
         alert.setUpdatedAt(LocalDateTime.now());
@@ -163,4 +171,16 @@ public class AlertController {
 
         return authentication.getName();
     }
+    private Alert getOwnedAlert(Long alertId, Authentication authentication) {
+    Alert alert = alertRepository.findById(alertId)
+            .orElseThrow(() -> new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Alert not found"));
+
+    if (!authentication.getName().equals(alert.getOwnerUsername())) {
+        throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Alert not found");
+    }
+
+    return alert;
+}
 }

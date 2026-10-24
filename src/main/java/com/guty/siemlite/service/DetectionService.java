@@ -68,19 +68,18 @@ public class DetectionService {
         }
 
         List<SecurityEvent> failedLogins =
-                securityEventRepository.findBySourceIpAndEventTypeAndTimestampAfter(
-                        event.getSourceIp(),
-                        "FAILED_LOGIN",
-                        fiveMinutesAgo
-                );
+                securityEventRepository.findByOwnerUsernameAndSourceIpAndEventTypeAndTimestampAfter(
+    event.getOwnerUsername(), event.getSourceIp(),
+    "FAILED_LOGIN", fiveMinutesAgo
+);
 
         if (failedLogins.size() >= 5) {
 
             boolean bruteForceExists =
-                    alertRepository.existsBySourceIpAndAlertType(
-                            event.getSourceIp(),
-                            "BRUTE_FORCE_ATTEMPT"
-                    );
+                    alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+    event.getOwnerUsername(), event.getSourceIp(),
+    "BRUTE_FORCE_ATTEMPT"
+);
 
             if (!bruteForceExists) {
 
@@ -102,21 +101,24 @@ public class DetectionService {
     private void detectAccountCompromise(SecurityEvent event, LocalDateTime fiveMinutesAgo) {
 
         List<SecurityEvent> failedLogins =
-                securityEventRepository
-                        .findBySourceIpAndUsernameAndEventTypeAndTimestampAfter(
-                                event.getSourceIp(),
-                                event.getUsername(),
-                                "FAILED_LOGIN",
-                                fiveMinutesAgo
-                        );
-
+                // New: current user's events only
+securityEventRepository
+    .findByOwnerUsernameAndSourceIpAndUsernameAndEventTypeAndTimestampAfter(
+        event.getOwnerUsername(),
+        event.getSourceIp(),
+        event.getUsername(),
+        "FAILED_LOGIN",
+        fiveMinutesAgo
+    );
         if (failedLogins.size() >= 5) {
 
             boolean compromiseExists =
-                    alertRepository.existsBySourceIpAndAlertType(
-                            event.getSourceIp(),
-                            "ACCOUNT_COMPROMISE"
-                    );
+                   // New
+alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+    event.getOwnerUsername(),
+    event.getSourceIp(),
+    "ACCOUNT_COMPROMISE"
+);
 
             if (!compromiseExists) {
 
@@ -139,11 +141,13 @@ public class DetectionService {
     private void detectPasswordSpray(SecurityEvent event, LocalDateTime fiveMinutesAgo) {
 
         List<SecurityEvent> failedLogins =
-                securityEventRepository.findBySourceIpAndEventTypeAndTimestampAfter(
-                        event.getSourceIp(),
-                        "FAILED_LOGIN",
-                        fiveMinutesAgo
-                );
+               
+        securityEventRepository.findByOwnerUsernameAndSourceIpAndEventTypeAndTimestampAfter(
+                                event.getOwnerUsername(),
+                                event.getSourceIp(),
+                                "FAILED_LOGIN",
+                                fiveMinutesAgo
+                        );
 
         Set<String> uniqueUsernames =
                 failedLogins.stream()
@@ -153,10 +157,11 @@ public class DetectionService {
         if (uniqueUsernames.size() >= 5) {
 
             boolean passwordSprayExists =
-                    alertRepository.existsBySourceIpAndAlertType(
-                            event.getSourceIp(),
-                            "PASSWORD_SPRAY"
-                    );
+                    alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+    event.getOwnerUsername(),
+    event.getSourceIp(),
+    "PASSWORD_SPRAY"
+);
 
             if (!passwordSprayExists) {
 
@@ -182,19 +187,22 @@ public class DetectionService {
         LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
 
         List<SecurityEvent> failedLogins =
-                securityEventRepository.findBySourceIpAndEventTypeAndTimestampAfter(
-                        event.getSourceIp(),
-                        "FAILED_LOGIN",
-                        oneMinuteAgo
-                );
+                securityEventRepository
+    .findByOwnerUsernameAndSourceIpAndEventTypeAndTimestampAfter(
+        event.getOwnerUsername(),
+        event.getSourceIp(),
+        "FAILED_LOGIN",
+        oneMinuteAgo
+    );
 
         if (failedLogins.size() >= 20) {
 
             boolean aggressiveExists =
-                    alertRepository.existsBySourceIpAndAlertType(
-                            event.getSourceIp(),
-                            "BRUTE_FORCE_AGGRESSIVE"
-                    );
+                   alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+    event.getOwnerUsername(),
+    event.getSourceIp(),
+    "BRUTE_FORCE_AGGRESSIVE"
+);
 
             if (!aggressiveExists) {
 
@@ -218,11 +226,13 @@ public class DetectionService {
         LocalDateTime thirtySecondsAgo = LocalDateTime.now().minusSeconds(30);
 
         List<SecurityEvent> connectionAttempts =
-                securityEventRepository.findBySourceIpAndEventTypeAndTimestampAfter(
-                        event.getSourceIp(),
-                        "CONNECTION_ATTEMPT",
-                        thirtySecondsAgo
-                );
+                securityEventRepository
+    .findByOwnerUsernameAndSourceIpAndEventTypeAndTimestampAfter(
+        event.getOwnerUsername(),
+        event.getSourceIp(),
+        "CONNECTION_ATTEMPT",
+        thirtySecondsAgo
+    );
 
         Set<Integer> uniquePorts =
                 connectionAttempts.stream()
@@ -232,10 +242,11 @@ public class DetectionService {
         if (uniquePorts.size() >= 10) {
 
             boolean portScanExists =
-                    alertRepository.existsBySourceIpAndAlertType(
-                            event.getSourceIp(),
-                            "PORT_SCAN"
-                    );
+                    alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+    event.getOwnerUsername(),
+    event.getSourceIp(),
+    "PORT_SCAN"
+);
 
             if (!portScanExists) {
 
@@ -259,26 +270,28 @@ public class DetectionService {
 
         List<SecurityEvent> failedLogins =
                 securityEventRepository
-                        .findBySourceIpAndUsernameAndEventTypeAndTimestampAfter(
+                        .findByOwnerUsernameAndSourceIpAndUsernameAndEventTypeAndTimestampAfter(
+                                event.getOwnerUsername(),
                                 event.getSourceIp(),
                                 event.getUsername(),
                                 "FAILED_LOGIN",
                                 fiveMinutesAgo
                         );
-
+                
         List<SecurityEvent> successfulLogins =
                 securityEventRepository
-                        .findBySourceIpAndUsernameAndEventTypeAndTimestampAfter(
-                                event.getSourceIp(),
-                                event.getUsername(),
-                                "SUCCESSFUL_LOGIN",
-                                fiveMinutesAgo
-                        );
-
+    .findByOwnerUsernameAndSourceIpAndUsernameAndEventTypeAndTimestampAfter(
+        event.getOwnerUsername(),
+        event.getSourceIp(),
+        event.getUsername(),
+        "SUCCESSFUL_LOGIN",
+        fiveMinutesAgo
+    );
         if (failedLogins.size() >= 5 && !successfulLogins.isEmpty()) {
 
             boolean privilegeEscalationExists =
-                    alertRepository.existsBySourceIpAndAlertType(
+                    alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+                            event.getOwnerUsername(),
                             event.getSourceIp(),
                             "PRIVILEGE_ESCALATION"
                     );
@@ -313,11 +326,11 @@ public class DetectionService {
         }
 
         boolean iocMatchExists =
-                alertRepository.existsBySourceIpAndAlertType(
-                        event.getSourceIp(),
-                        "IOC_MATCH"
-                );
-
+               alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+    event.getOwnerUsername(),
+    event.getSourceIp(),
+    "IOC_MATCH"
+);
         if (iocMatchExists) {
             return;
         }
@@ -337,9 +350,10 @@ public class DetectionService {
     }
 
     private void enrichAlert(Alert alert, SecurityEvent event) {
-        alert.setUsername(event.getUsername());
-        alert.setEventType(event.getEventType());
-    }
+    alert.setUsername(event.getUsername());
+    alert.setEventType(event.getEventType());
+    alert.setOwnerUsername(event.getOwnerUsername());
+}
 
     private void saveAlertWithMitre(Alert alert) {
 

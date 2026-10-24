@@ -1,5 +1,5 @@
 package com.guty.siemlite.controller;
-
+import org.springframework.security.core.Authentication;
 import com.guty.siemlite.model.SecurityEvent;
 import com.guty.siemlite.repository.SecurityEventRepository;
 import com.guty.siemlite.specification.SecurityEventSpecification;
@@ -23,33 +23,26 @@ public class EventController {
     public EventController(SecurityEventRepository securityEventRepository) {
         this.securityEventRepository = securityEventRepository;
     }
+@Operation(summary = "Retrieve paginated and filtered security events")
+@GetMapping
+public Page<SecurityEvent> getEvents(
+        @RequestParam(required = false) String eventType,
+        @RequestParam(required = false) String sourceIp,
+        @RequestParam(required = false) String username,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size,
+        Authentication authentication) {
 
-    @Operation(summary = "Retrieve paginated and filtered security events")
-    @GetMapping
-    public Page<SecurityEvent> getEvents(
+    Specification<SecurityEvent> specification = Specification
+            .where(SecurityEventSpecification.hasEventType(eventType))
+            .and(SecurityEventSpecification.hasSourceIp(sourceIp))
+            .and(SecurityEventSpecification.hasUsername(username))
+            .and((root, query, cb) ->
+                    cb.equal(root.get("ownerUsername"),
+                            authentication.getName()));
 
-            @RequestParam(required = false)
-            String eventType,
+    PageRequest pageRequest = PageRequest.of(page, size);
 
-            @RequestParam(required = false)
-            String sourceIp,
-
-            @RequestParam(required = false)
-            String username,
-
-            @RequestParam(defaultValue = "0")
-            int page,
-
-            @RequestParam(defaultValue = "20")
-            int size) {
-
-        Specification<SecurityEvent> specification = Specification
-                .where(SecurityEventSpecification.hasEventType(eventType))
-                .and(SecurityEventSpecification.hasSourceIp(sourceIp))
-                .and(SecurityEventSpecification.hasUsername(username));
-
-        PageRequest pageRequest = PageRequest.of(page, size);
-
-        return securityEventRepository.findAll(specification, pageRequest);
-    }
+    return securityEventRepository.findAll(specification, pageRequest);
+} 
 }

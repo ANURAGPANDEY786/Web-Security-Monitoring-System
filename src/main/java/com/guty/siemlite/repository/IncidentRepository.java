@@ -29,4 +29,15 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
      * @return matching incidents
      */
     List<Incident> findBySourceIp(String sourceIp);
+    List<Incident> findByOwnerUsername(String ownerUsername);
+
+java.util.Optional<Incident> findByIdAndOwnerUsername(
+        Long id,
+        String ownerUsername
+);
+boolean existsByOwnerUsernameAndSourceIpAndIncidentType(
+        String ownerUsername,
+        String sourceIp,
+        String incidentType
+);
 }

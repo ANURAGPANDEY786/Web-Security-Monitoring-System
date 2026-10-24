@@ -1,12 +1,21 @@
-FROM eclipse-temurin:25-jdk
+
+# Build stage
+FROM maven:3.9-eclipse-temurin-25 AS build
 
 WORKDIR /app
 
-COPY . .
+COPY pom.xml .
+COPY src ./src
 
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+RUN mvn -B -DskipTests package
+
+# Runtime stage
+FROM eclipse-temurin:25-jre
+
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8081
 
-ENTRYPOINT ["java","-jar","target/siem-lite-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

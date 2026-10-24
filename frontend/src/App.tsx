@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import UrlScannerPage from "./pages/UrlScannerPage";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
@@ -54,6 +55,14 @@ export default function App() {
                     </ProtectedRoute>
                 }
             />
+             <Route
+    path="/url-scanner"
+    element={
+        <ProtectedRoute>
+            <UrlScannerPage />
+        </ProtectedRoute>
+    }
+/>
 
             <Route
                 path="/iocs"

@@ -12,6 +12,8 @@ public class IndicatorOfCompromise {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column
+private String ownerUsername;
 
     /**
      * The IOC value, such as an IP address, domain, URL, or file hash.
@@ -104,6 +106,13 @@ public class IndicatorOfCompromise {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+    public String getOwnerUsername() {
+    return ownerUsername;
+}
+
+public void setOwnerUsername(String ownerUsername) {
+    this.ownerUsername = ownerUsername;
+}
 
     public void setValue(String value) {
         this.value = value;

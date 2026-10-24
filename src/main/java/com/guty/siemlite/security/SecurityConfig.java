@@ -73,11 +73,13 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/auth/me")
                         .authenticated()
+                        .requestMatchers("/api/scans/**")
+                        .hasAnyRole("ANALYST", "ADMIN")
 
                         
 
                         .requestMatchers(HttpMethod.GET, "/api/audit/**")
-                        .hasRole("ADMIN")
+.hasAnyRole("ANALYST", "ADMIN")
 
                         .requestMatchers(HttpMethod.PUT, "/api/alerts/*/assign")
                         .hasAnyRole("ANALYST", "ADMIN")

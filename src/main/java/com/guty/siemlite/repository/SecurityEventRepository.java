@@ -149,4 +149,66 @@ public interface SecurityEventRepository extends
             ORDER BY COUNT(e) DESC
             """)
     List<TopUsername> findTopUsernames();
+    List<SecurityEvent> findBySourceIpAndUsernameAndEventTypeAndOwnerUsername(
+        String sourceIp,
+        String username,
+        String eventType,
+        String ownerUsername
+);
+List<SecurityEvent> findByOwnerUsername(String ownerUsername);
+
+        long countByOwnerUsername(String ownerUsername);
+
+long countByOwnerUsernameAndEventType(
+        String ownerUsername, String eventType);
+
+long countByOwnerUsernameAndTimestampAfter(
+        String ownerUsername, LocalDateTime timestamp);
+
+long countByOwnerUsernameAndTimestampGreaterThanEqualAndTimestampLessThan(
+        String ownerUsername, LocalDateTime start, LocalDateTime end);
+
+@Query("""
+    SELECT new com.guty.siemlite.dto.TopSourceIp(e.sourceIp, COUNT(e))
+    FROM SecurityEvent e
+    WHERE e.ownerUsername = :owner
+      AND e.sourceIp IS NOT NULL
+    GROUP BY e.sourceIp
+    ORDER BY COUNT(e) DESC
+    """)
+List<TopSourceIp> findTopSourceIpsByOwner(
+        @org.springframework.data.repository.query.Param("owner")
+        String ownerUsername);
+
+@Query("""
+    SELECT new com.guty.siemlite.dto.TopUsername(e.username, COUNT(e))
+    FROM SecurityEvent e
+    WHERE e.ownerUsername = :owner
+      AND e.username IS NOT NULL
+    GROUP BY e.username
+    ORDER BY COUNT(e) DESC
+    """)
+List<TopUsername> findTopUsernamesByOwner(
+        @org.springframework.data.repository.query.Param("owner")
+        String ownerUsername);
+        List<SecurityEvent> findByOwnerUsernameAndSourceIpAndEventTypeAndTimestampAfter(
+        String ownerUsername,
+        String sourceIp,
+        String eventType,
+        LocalDateTime timestamp
+);
+
+List<SecurityEvent> findByOwnerUsernameAndSourceIpAndUsernameAndEventTypeAndTimestampAfter(
+        String ownerUsername,
+        String sourceIp,
+        String username,
+        String eventType,
+        LocalDateTime timestamp
+);
+List<SecurityEvent> findByOwnerUsernameAndSourceIpAndUsernameAndEventType(
+    String ownerUsername,
+    String sourceIp,
+    String username,
+    String eventType
+);
 }

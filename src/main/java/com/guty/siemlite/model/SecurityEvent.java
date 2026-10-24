@@ -9,6 +9,8 @@ public class SecurityEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column
+    private String ownerUsername; 
 
     private LocalDateTime timestamp;
     private String sourceIp;
@@ -38,6 +40,7 @@ public class SecurityEvent {
         return id;
     }
 
+
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
@@ -61,10 +64,16 @@ public class SecurityEvent {
     public Integer getDestinationPort() {
         return destinationPort;
     }
+    public String getOwnerUsername() {
+    return ownerUsername;
+}
 
     public void setId(Long id) {
         this.id = id;
     }
+    public void setOwnerUsername(String ownerUsername) {
+    this.ownerUsername = ownerUsername;
+}
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;

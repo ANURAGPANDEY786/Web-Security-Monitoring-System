@@ -69,33 +69,36 @@ public class AuthenticationService {
         );
     }
 
-    public UserResponse register(RegisterRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Username already exists");
-        }
-
-        Role role = Role.valueOf(request.getRole().toUpperCase());
-
-        User user = new User(
-                request.getUsername(),
-                passwordEncoder.encode(request.getPassword()),
-                role
-        );
-
-        User savedUser = userRepository.save(user);
-
-        auditLogService.log(
-                AuditAction.USER_REGISTERED,
-                savedUser.getUsername(),
-                "User registered with role: " + savedUser.getRole().name()
-        );
-
-        return new UserResponse(
-                savedUser.getId(),
-                savedUser.getUsername(),
-                savedUser.getRole().name()
-        );
+   
+public UserResponse register(RegisterRequest request) {
+    if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        throw new RuntimeException("Username already exists");
     }
+
+    // Public registration always creates an ANALYST.
+    // Never trust the role supplied by the frontend.
+    Role role = Role.ANALYST;
+
+    User user = new User(
+            request.getUsername(),
+            passwordEncoder.encode(request.getPassword()),
+            role
+    );
+
+    User savedUser = userRepository.save(user);
+
+    auditLogService.log(
+            AuditAction.USER_REGISTERED,
+            savedUser.getUsername(),
+            "User registered with role: " + savedUser.getRole().name()
+    );
+
+    return new UserResponse(
+            savedUser.getId(),
+            savedUser.getUsername(),
+            savedUser.getRole().name()
+    );
+}
 
     public UserResponse getCurrentUser(String username) {
         User user = userRepository.findByUsername(username)

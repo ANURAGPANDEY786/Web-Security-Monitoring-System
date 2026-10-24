@@ -39,7 +39,7 @@ function getStatusColor(status: string) {
             return "error";
         case "IN_PROGRESS":
             return "warning";
-        case "CLOSED":
+        case "RESOLVED":
             return "success";
         default:
             return "default";

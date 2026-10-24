@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Optional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -176,4 +177,77 @@ public interface AlertRepository extends
      */
     @Query("SELECT COUNT(DISTINCT a.sourceIp) FROM Alert a WHERE a.alertType = :alertType")
     long countDistinctSourceIpByAlertType(@Param("alertType") String alertType);
+
+    long countByOwnerUsername(String ownerUsername);
+
+long countByOwnerUsernameAndSeverity(
+        String ownerUsername, String severity);
+
+long countByOwnerUsernameAndCreatedAtAfter(
+        String ownerUsername, LocalDateTime time);
+
+long countByOwnerUsernameAndRiskScoreLessThan(
+        String ownerUsername, Integer riskScore);
+
+long countByOwnerUsernameAndRiskScoreBetween(
+        String ownerUsername, Integer minRiskScore, Integer maxRiskScore);
+
+long countByOwnerUsernameAndRiskScoreGreaterThanEqual(
+        String ownerUsername, Integer riskScore);
+
+long countByOwnerUsernameAndAlertType(
+        String ownerUsername, String alertType);
+
+long countByOwnerUsernameAndAlertTypeAndSeverity(
+        String ownerUsername, String alertType, String severity);
+
+@Query("SELECT SUM(a.riskScore) FROM Alert a WHERE a.ownerUsername = :owner")
+Integer sumRiskScoreByOwner(@Param("owner") String ownerUsername);
+
+@Query("SELECT MAX(a.riskScore) FROM Alert a WHERE a.ownerUsername = :owner")
+Integer maxRiskScoreByOwner(@Param("owner") String ownerUsername);
+
+@Query("""
+    SELECT new com.guty.siemlite.dto.TopAlertType(a.alertType, COUNT(a))
+    FROM Alert a
+    WHERE a.ownerUsername = :owner
+    GROUP BY a.alertType
+    ORDER BY COUNT(a) DESC
+    """)
+List<TopAlertType> findTopAlertTypesByOwner(
+        @Param("owner") String ownerUsername);
+
+@Query("""
+    SELECT new com.guty.siemlite.dto.MitreStatistic(a.mitreTechnique, COUNT(a))
+    FROM Alert a
+    WHERE a.ownerUsername = :owner
+      AND a.mitreTechnique IS NOT NULL
+    GROUP BY a.mitreTechnique
+    ORDER BY COUNT(a) DESC
+    """)
+List<MitreStatistic> findMitreStatisticsByOwner(
+        @Param("owner") String ownerUsername);
+
+long countByOwnerUsernameAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+        String ownerUsername, LocalDateTime start, LocalDateTime end);
+
+long countByOwnerUsernameAndRiskScoreLessThanAndAlertType(
+        String ownerUsername, Integer riskScore, String alertType);
+
+@Query("""
+    SELECT COUNT(DISTINCT a.sourceIp)
+    FROM Alert a
+    WHERE a.ownerUsername = :owner
+      AND a.alertType = :alertType
+    """)
+long countDistinctSourceIpByOwnerAndAlertType(
+        @Param("owner") String ownerUsername,
+        @Param("alertType") String alertType);
+        
+boolean existsByOwnerUsernameAndSourceIpAndAlertType(
+        String ownerUsername,
+        String sourceIp,
+        String alertType
+);
+
 }

@@ -126,7 +126,7 @@ export default function AlertDetailsDrawer({
                         >
                             <MenuItem value="OPEN">OPEN</MenuItem>
                             <MenuItem value="INVESTIGATING">INVESTIGATING</MenuItem>
-                            <MenuItem value="CLOSED">CLOSED</MenuItem>
+                            <MenuItem value="RESOLVED">RESOLVED</MenuItem>
                         </Select>
                     </Box>
 

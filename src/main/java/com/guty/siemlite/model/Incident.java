@@ -21,6 +21,8 @@ public class Incident {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column
+private String ownerUsername;
 
     private LocalDateTime timestamp;
 
@@ -117,6 +119,13 @@ public class Incident {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+    public String getOwnerUsername() {
+    return ownerUsername;
+}
+
+public void setOwnerUsername(String ownerUsername) {
+    this.ownerUsername = ownerUsername;
+}
 
     public void setId(Long id) {
         this.id = id;
