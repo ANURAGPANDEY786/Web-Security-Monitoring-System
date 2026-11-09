@@ -10,9 +10,17 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
+import com.guty.siemlite.security.model.User;
+import com.guty.siemlite.security.repository.UserRepository;
 
 @Service
 public class JwtService {
+
+    private final UserRepository userRepository;
+
+public JwtService(UserRepository userRepository) {
+    this.userRepository = userRepository;
+}
 
     // Development only - we'll externalize this later
     private static final String SECRET_KEY =
@@ -24,15 +32,19 @@ public class JwtService {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return Jwts.builder()
-                .subject(userDetails.getUsername())
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION))
-                .signWith(getSigningKey())
-                .compact();
-    }
+   public String generateToken(UserDetails userDetails) {
 
+    User user = userRepository.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    return Jwts.builder()
+            .subject(userDetails.getUsername())
+            .claim("tokenVersion", user.getTokenVersion())
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION))
+            .signWith(getSigningKey())
+            .compact();
+}
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -48,9 +60,26 @@ public class JwtService {
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        return extractUsername(token).equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+
+    if (!extractUsername(token).equals(userDetails.getUsername())) {
+        return false;
     }
+
+    if (isTokenExpired(token)) {
+        return false;
+    }
+
+    User user = userRepository.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    Integer tokenVersion = extractClaim(
+            token,
+            claims -> claims.get("tokenVersion", Integer.class)
+    );
+
+    return tokenVersion != null
+            && tokenVersion.equals(user.getTokenVersion());
+}
 
     private boolean isTokenExpired(String token) {
         return extractClaim(token, Claims::getExpiration)

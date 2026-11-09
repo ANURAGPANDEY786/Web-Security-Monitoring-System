@@ -1,4 +1,4 @@
-export type IncidentStatus = "OPEN" | "IN_PROGRESS" | "CLOSED";
+export type IncidentStatus = "OPEN" | "INVESTIGATING" | "RESOLVED";
 
 export interface Incident {
     id: number;

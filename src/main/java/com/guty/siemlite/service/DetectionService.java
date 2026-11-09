@@ -10,6 +10,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.regex.Pattern;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
 
 @Service
 public class DetectionService {
@@ -53,6 +57,10 @@ public class DetectionService {
         if ("CONNECTION_ATTEMPT".equals(event.getEventType())) {
             detectPortScan(event);
         }
+
+        if ("WEB_REQUEST".equals(event.getEventType())) {
+    detectWebAttacks(event);
+}
     }
 
     private void detectBruteForce(SecurityEvent event, LocalDateTime fiveMinutesAgo) {
@@ -402,6 +410,17 @@ alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
                 alert.setMitreTechnique("T1105");
                 alert.setMitreDescription("Ingress Tool Transfer");
             }
+            case "SQL_INJECTION_ATTEMPT" -> {
+    alert.setMitreTechnique("T1190");
+    alert.setMitreDescription("Exploit Public-Facing Application");
+}
+
+case "XSS_ATTEMPT" -> {
+    alert.setMitreTechnique("UNKNOWN");
+    alert.setMitreDescription(
+            "Suspicious Cross-Site Scripting pattern; ATT&CK mapping requires investigation"
+    );
+}
 
             default -> {
                 alert.setMitreTechnique("UNKNOWN");
@@ -409,4 +428,90 @@ alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
             }
         }
     }
+
+    
+private static final Pattern XSS_PATTERN = Pattern.compile(
+        "(?i)(<\\s*script\\b|javascript\\s*:|onerror\\s*=|onload\\s*=|<\\s*svg\\b|<\\s*iframe\\b)"
+);
+
+private static final Pattern SQLI_PATTERN = Pattern.compile(
+        "(?i)(\\bunion\\s+(all\\s+)?select\\b|" +
+        "\\bor\\s+['\"]?\\w+['\"]?\\s*=\\s*['\"]?\\w+|" +
+        "['\"]\\s*or\\s+['\"]?1['\"]?\\s*=\\s*['\"]?1|" +
+        "\\bselect\\b.{0,80}\\bfrom\\b|" +
+        "\\bsleep\\s*\\(|\\bbenchmark\\s*\\(|--\\s)"
+);
+
+
+
+private void detectWebAttacks(SecurityEvent event) {
+    String rawLog = event.getRawLog();
+
+    if (rawLog == null || rawLog.isBlank()) {
+        return;
+    }
+
+    String decodedLog;
+    try {
+        decodedLog = URLDecoder.decode(
+                rawLog,
+                StandardCharsets.UTF_8
+        );
+    } catch (IllegalArgumentException ex) {
+        decodedLog = rawLog;
+    }
+
+    if (XSS_PATTERN.matcher(decodedLog).find()) {
+        createWebAttackAlert(
+                event,
+                "XSS_ATTEMPT",
+                "HIGH",
+                75,
+                "Suspicious XSS pattern detected in a web access log"
+        );
+    }
+
+    if (SQLI_PATTERN.matcher(decodedLog).find()) {
+        createWebAttackAlert(
+                event,
+                "SQL_INJECTION_ATTEMPT",
+                "HIGH",
+                80,
+                "Suspicious SQL injection pattern detected in a web access log"
+        );
+    }
+}
+
+
+private void createWebAttackAlert(
+        SecurityEvent event,
+        String alertType,
+        String severity,
+        int riskScore,
+        String message) {
+
+    boolean alreadyExists =
+            alertRepository.existsByOwnerUsernameAndSourceIpAndAlertType(
+                    event.getOwnerUsername(),
+                    event.getSourceIp(),
+                    alertType
+            );
+
+    if (alreadyExists) {
+        return;
+    }
+
+    Alert alert = new Alert(
+            LocalDateTime.now(),
+            alertType,
+            severity,
+            riskScore,
+            message + " from " + event.getSourceIp(),
+            event.getSourceIp()
+    );
+
+    enrichAlert(alert, event);
+    saveAlertWithMitre(alert);
+}
+
 }

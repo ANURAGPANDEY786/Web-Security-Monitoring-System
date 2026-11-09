@@ -1,3 +1,4 @@
+
 package com.guty.siemlite.service;
 
 import com.guty.siemlite.model.SecurityEvent;
@@ -7,115 +8,79 @@ import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
- * Responsible for converting raw log lines
- * into structured SecurityEvent objects.
- */
 @Service
 public class LogParserService {
 
+    private static final Pattern FAILED_LOGIN =
+            Pattern.compile("Failed password for (\\w+) from ([0-9.]+)");
+
+    private static final Pattern SUCCESS_LOGIN =
+            Pattern.compile("Accepted password for (\\w+) from ([0-9.]+)");
+
+    private static final Pattern ADMIN_COMMAND =
+            Pattern.compile("(?i)(admin|sudo) command executed by (\\w+) from ([0-9.]+)");
+
+    private static final Pattern CONNECTION =
+            Pattern.compile("Connection attempt from ([0-9.]+) to port (\\d+)");
+
+    // Common Apache/Nginx access log:
+    // 192.168.1.10 - - [date] "GET /search?q=test HTTP/1.1" 200 123
+    private static final Pattern WEB_ACCESS =
+            Pattern.compile(
+                    "^([0-9.]+)\\s+\\S+\\s+\\S+\\s+\\[[^]]+\\]\\s+\"(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\\s+(\\S+)\\s+HTTP/[^\\\"]+\"\\s+(\\d{3})\\s+\\S+.*$",
+                    Pattern.CASE_INSENSITIVE
+            );
+
     public SecurityEvent parseLog(String logLine) {
+        if (logLine == null || logLine.isBlank()) {
+            return null;
+        }
 
-        /*
-         * Failed SSH login.
-         */
-        Pattern failedPattern =
-                Pattern.compile("Failed password for (\\w+) from ([0-9.]+)");
-
-        Matcher failedMatcher = failedPattern.matcher(logLine);
-
-        if (failedMatcher.find()) {
-
-            String username = failedMatcher.group(1);
-            String ip = failedMatcher.group(2);
-
+        Matcher matcher = FAILED_LOGIN.matcher(logLine);
+        if (matcher.find()) {
             return new SecurityEvent(
-                    LocalDateTime.now(),
-                    ip,
-                    username,
-                    "FAILED_LOGIN",
-                    logLine,
-                    null
+                    LocalDateTime.now(), matcher.group(2),
+                    matcher.group(1), "FAILED_LOGIN", logLine, null
             );
         }
 
-        /*
-         * Successful SSH login.
-         */
-        Pattern successPattern =
-                Pattern.compile("Accepted password for (\\w+) from ([0-9.]+)");
-
-        Matcher successMatcher = successPattern.matcher(logLine);
-
-        if (successMatcher.find()) {
-
-            String username = successMatcher.group(1);
-            String ip = successMatcher.group(2);
-
+        matcher = SUCCESS_LOGIN.matcher(logLine);
+        if (matcher.find()) {
             return new SecurityEvent(
-                    LocalDateTime.now(),
-                    ip,
-                    username,
-                    "SUCCESSFUL_LOGIN",
-                    logLine,
-                    null
+                    LocalDateTime.now(), matcher.group(2),
+                    matcher.group(1), "SUCCESSFUL_LOGIN", logLine, null
             );
         }
 
-        /*
-         * Admin command execution.
-         *
-         * Supported examples:
-         *
-         * Admin command executed by root from 192.168.1.100
-         * sudo command executed by root from 192.168.1.100
-         * Sudo command executed by root from 192.168.1.100
-         */
-        Pattern adminCommandPattern =
-                Pattern.compile("(?i)(admin|sudo) command executed by (\\w+) from ([0-9.]+)");
-
-        Matcher adminCommandMatcher = adminCommandPattern.matcher(logLine);
-
-        if (adminCommandMatcher.find()) {
-
-            String username = adminCommandMatcher.group(2);
-            String ip = adminCommandMatcher.group(3);
-
+        matcher = ADMIN_COMMAND.matcher(logLine);
+        if (matcher.find()) {
             return new SecurityEvent(
-                    LocalDateTime.now(),
-                    ip,
-                    username,
-                    "ADMIN_COMMAND_EXECUTED",
-                    logLine,
-                    null
+                    LocalDateTime.now(), matcher.group(3),
+                    matcher.group(2), "ADMIN_COMMAND_EXECUTED", logLine, null
             );
         }
 
-        /*
-         * Network connection attempt.
-         */
-        Pattern connectionPattern =
-                Pattern.compile("Connection attempt from ([0-9.]+) to port (\\d+)");
+        matcher = CONNECTION.matcher(logLine);
+        if (matcher.find()) {
+            return new SecurityEvent(
+                    LocalDateTime.now(), matcher.group(1), null,
+                    "CONNECTION_ATTEMPT", logLine,
+                    Integer.parseInt(matcher.group(2))
+            );
+        }
 
-        Matcher connectionMatcher = connectionPattern.matcher(logLine);
-
-        if (connectionMatcher.find()) {
-
-            String ip = connectionMatcher.group(1);
-            Integer destinationPort =
-                    Integer.parseInt(connectionMatcher.group(2));
-
+        matcher = WEB_ACCESS.matcher(logLine);
+        if (matcher.matches()) {
             return new SecurityEvent(
                     LocalDateTime.now(),
-                    ip,
+                    matcher.group(1),
                     null,
-                    "CONNECTION_ATTEMPT",
+                    "WEB_REQUEST",
                     logLine,
-                    destinationPort
+                    null
             );
         }
 
         return null;
     }
 }
-

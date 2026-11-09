@@ -97,6 +97,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/logs", "/api/logs/bulk")
                         .hasAnyRole("ANALYST", "ADMIN")
 
+                        .requestMatchers("/api/admin/**")
+                .hasRole("ADMIN")
+
+                .requestMatchers(
+    org.springframework.http.HttpMethod.PUT,
+    "/api/auth/change-password"
+).authenticated()
+
 
                         .requestMatchers(HttpMethod.GET, "/api/**")
                         .hasAnyRole("VIEWER", "ANALYST", "ADMIN")

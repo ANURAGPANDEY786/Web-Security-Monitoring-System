@@ -22,7 +22,7 @@ interface Props {
     onNotesSave: (notes: string) => void;
 }
 
-const statuses: IncidentStatus[] = ["OPEN", "IN_PROGRESS", "RESOLVED"];
+const statuses: IncidentStatus[] = ["OPEN", "INVESTIGATING", "RESOLVED"];
 
 function formatDate(value: string | null | undefined) {
     if (!value) return "N/A";

@@ -138,4 +138,21 @@ export const scenarios: DemoLogScenario[] = [
         description: "Failed SSH login from a seeded QakBot-related IOC source.",
         logs: "Jul 01 19:15:44 web01 sshd[9004]: Failed password for deploy from 198.51.100.25 port 44444 ssh2",
     },
+
+        {
+        name: "XSS Attempt",
+        severity: "HIGH",
+        mitre: "Under Investigation",
+        description:
+            "Detects a suspicious Cross-Site Scripting pattern in a web access request. Detection indicates a possible attempt, not confirmed exploitation.",
+        logs: '192.168.1.110 - - [24/Oct/2026:10:00:00 +0000] "GET /search?q=<script>alert(1)</script> HTTP/1.1" 200 123',
+    },
+    {
+        name: "SQL Injection Attempt",
+        severity: "HIGH",
+        mitre: "T1190",
+        description:
+            "Detects a suspicious SQL injection pattern in a web access request. Detection indicates a possible attempt, not confirmed exploitation.",
+        logs: '192.168.1.111 - - [24/Oct/2026:10:05:00 +0000] "GET /products?id=1%20UNION%20SELECT%20username,password%20FROM%20users HTTP/1.1" 200 456',
+    },
 ];

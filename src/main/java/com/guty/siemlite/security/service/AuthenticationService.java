@@ -2,6 +2,7 @@ package com.guty.siemlite.security.service;
 
 import com.guty.siemlite.audit.model.AuditAction;
 import com.guty.siemlite.audit.service.AuditLogService;
+import com.guty.siemlite.security.dto.ChangePasswordRequest;
 import com.guty.siemlite.security.dto.LoginRequest;
 import com.guty.siemlite.security.dto.LoginResponse;
 import com.guty.siemlite.security.dto.RegisterRequest;
@@ -15,6 +16,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import com.guty.siemlite.security.dto.ChangePasswordRequest;
 
 @Service
 public class AuthenticationService {
@@ -110,4 +113,65 @@ public UserResponse register(RegisterRequest request) {
                 user.getRole().name()
         );
     }
+    
+
+
+// Add this method inside AuthenticationService class
+
+@Transactional
+public void changePassword(
+        String username,
+        ChangePasswordRequest request) {
+
+    User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    // Verify current password
+    if (!passwordEncoder.matches(
+            request.getCurrentPassword(),
+            user.getPassword())) {
+
+        throw new IllegalArgumentException("Current password is incorrect");
+    }
+
+    // Validate new password
+    if (request.getNewPassword() == null ||
+            request.getNewPassword().length() < 8) {
+
+        throw new IllegalArgumentException(
+                "New password must contain at least 8 characters");
+    }
+
+    // Confirm new password
+    if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+
+        throw new IllegalArgumentException(
+                "New password and confirm password do not match");
+    }
+
+    // Prevent reusing the current password
+    if (passwordEncoder.matches(
+            request.getNewPassword(),
+            user.getPassword())) {
+
+        throw new IllegalArgumentException(
+                "New password must be different from current password");
+    }
+
+    // Save encrypted password
+    // Save encrypted password
+user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+// Invalidate all previously generated JWT tokens
+user.setTokenVersion(user.getTokenVersion() + 1);
+
+userRepository.save(user);
+    // Record security audit event
+    auditLogService.log(
+            AuditAction.PASSWORD_CHANGED,
+            username,
+            "User changed their password"
+    );
+}
+
 }

@@ -1,4 +1,4 @@
-
+ 
 import {
     Alert,
     Box,
@@ -14,7 +14,7 @@ import {
 import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AppLayout from "../components/layout/AppLayout";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 
 interface ScannerAlert {
@@ -64,6 +64,8 @@ export default function UrlScannerPage() {
     const [error, setError] = useState("");
     const [progress, setProgress] = useState<number | null>(null);
     const [findings, setFindings] = useState<ScannerAlert[]>([]);
+    const [resultsLoaded, setResultsLoaded] = useState(false);
+    const checkResultsRef = useRef<() => Promise<void>>(async () => {});
 
     // Uses the existing JWT token stored by the login page.
     const token = localStorage.getItem("token");
@@ -96,6 +98,7 @@ export default function UrlScannerPage() {
         setStatus("");
         setProgress(null);
         setFindings([]);
+        setResultsLoaded(false);
         setScanId(null);
 
         const targetUrl = validateUrl();
@@ -144,7 +147,7 @@ export default function UrlScannerPage() {
     };
 
     const checkResults = async () => {
-        if (!scanId) return;
+        if (!scanId || checking || resultsLoaded) return;
 
         setError("");
         setChecking(true);
@@ -198,6 +201,7 @@ export default function UrlScannerPage() {
                 : [];
 
             setFindings(returnedAlerts);
+            setResultsLoaded(true);
             setStatus(
                 `Scan completed. ${returnedAlerts.length} finding(s) returned by ZAP.`
             );
@@ -214,6 +218,41 @@ export default function UrlScannerPage() {
             setChecking(false);
         }
     };
+
+    // Keep the latest function available to the polling interval without
+    // restarting the interval on every render.
+    checkResultsRef.current = checkResults;
+
+    // Start checking immediately, then retry every 2 seconds. A recursive
+    // timeout avoids overlapping requests when the backend takes longer.
+    useEffect(() => {
+        if (!scanId || resultsLoaded) return;
+
+        let cancelled = false;
+        let timeoutId: number | undefined;
+
+        const poll = async () => {
+            if (cancelled) return;
+
+            await checkResultsRef.current();
+
+            if (!cancelled) {
+                timeoutId = window.setTimeout(() => {
+                    void poll();
+                }, 2000);
+            }
+        };
+
+        // Do the first progress check immediately after the scan ID is set.
+        void poll();
+
+        return () => {
+            cancelled = true;
+            if (timeoutId !== undefined) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, [scanId, resultsLoaded]);
 
     return (
         <AppLayout title="Website URL Scanner">
@@ -402,8 +441,7 @@ export default function UrlScannerPage() {
                                     variant="body2"
                                     sx={{ color: "#9ca3af" }}
                                 >
-                                    No findings loaded yet. Complete a scan
-                                    and check its results.
+                                    No findings loaded yet. Scan progress and findings will load automatically.
                                 </Typography>
                             ) : (
                                 findings.map((finding, index) => (
@@ -476,3 +514,4 @@ export default function UrlScannerPage() {
         </AppLayout>
     );
 }
+

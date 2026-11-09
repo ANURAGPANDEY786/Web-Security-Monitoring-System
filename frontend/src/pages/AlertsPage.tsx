@@ -64,17 +64,32 @@ export default function AlertsPage() {
     const [analyst, setAnalyst] = useState("");
     const [notes, setNotes] = useState("");
 
-    async function loadAlerts() {
-        try {
-            const data = await getAlerts();
-            setAlerts(data);
-            setError("");
-        } catch {
-            setError("Failed to load alerts.");
-        } finally {
-            setLoading(false);
-        }
+    
+        async function loadAlerts() {
+    try {
+        const data = await getAlerts();
+
+        const sortedAlerts = [...data].sort((a, b) => {
+            const dateA = a.createdAt
+                ? new Date(a.createdAt).getTime()
+                : 0;
+
+            const dateB = b.createdAt
+                ? new Date(b.createdAt).getTime()
+                : 0;
+
+            return dateB - dateA;
+        });
+
+        setAlerts(sortedAlerts);
+        setError("");
+    } catch {
+        setError("Failed to load alerts.");
+    } finally {
+        setLoading(false);
     }
+}
+    
 
     useEffect(() => {
         loadAlerts();

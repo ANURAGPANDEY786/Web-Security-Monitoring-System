@@ -37,7 +37,7 @@ function getStatusColor(status: string) {
     switch (status?.toUpperCase()) {
         case "OPEN":
             return "error";
-        case "IN_PROGRESS":
+        case "INVESTIGATING":
             return "warning";
         case "RESOLVED":
             return "success";

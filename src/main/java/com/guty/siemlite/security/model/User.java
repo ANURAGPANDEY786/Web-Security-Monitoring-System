@@ -23,6 +23,8 @@ public class User {
 
     @Column(nullable = false)
     private boolean enabled = true;
+    @Column(nullable = false)
+private Integer tokenVersion = 0;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -59,6 +61,13 @@ public class User {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+    public Integer getTokenVersion() {
+    return tokenVersion;
+}
+
+public void setTokenVersion(Integer tokenVersion) {
+    this.tokenVersion = tokenVersion;
+}
 
     public void setId(Long id) {
         this.id = id;
@@ -79,6 +88,7 @@ public class User {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+    
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
