@@ -1,53 +1,40 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-          rgba(0, 0, 0, 0.1) 0 10px 15px -3px,
-          rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
 
-  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
-  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  color: #e2e8f0;
+  background: #070d18;
+  color-scheme: dark;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  --bg: #070d18;
+  --surface: #0b1423;
+  --surface-light: #111e30;
+  --border: #1e293b;
+
+  --text: #cbd5e1;
+  --text-heading: #f8fafc;
+  --text-muted: #64748b;
+
+  --accent: #22d3ee;
+  --accent-soft: rgba(34, 211, 238, 0.10);
+
+  --success: #34d399;
+  --danger: #fb7185;
+  --warning: #fbbf24;
+
+  --sans: 'Inter', 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', Consolas, monospace;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (max-width: 1024px) {
-  :root {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-            rgba(0, 0, 0, 0.4) 0 10px 15px -3px,
-            rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+* {
+  box-sizing: border-box;
 }
 
 html,
@@ -57,6 +44,12 @@ body {
   width: 100%;
   min-height: 100vh;
   background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+}
+
+body {
+  overflow-x: hidden;
 }
 
 #root {
@@ -64,97 +57,200 @@ body {
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  background: var(--bg);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* Typography */
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-heading);
+  font-family: var(--sans);
+  font-weight: 700;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -1px;
 }
 
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-}
-
-@media (max-width: 1024px) {
-  h1 {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-
-  h2 {
-    font-size: 20px;
-  }
+  font-size: 26px;
+  letter-spacing: -0.5px;
 }
 
 p {
   margin: 0;
+  color: var(--text);
 }
 
 code,
+pre,
 .counter {
   font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
 }
 
 code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  color: #67e8f9;
+  background: rgba(34, 211, 238, 0.08);
+  padding: 4px 7px;
+  border-radius: 5px;
 }
 
-/* ===========================
-   Material UI Fixes
-=========================== */
+/* Selection */
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: #ffffff;
+}
+
+/* Scrollbar */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070d18;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #26364b;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #22d3ee;
+}
+
+/* Material UI global dark theme */
 
 .MuiPaper-root,
 .MuiCard-root {
-  background: #ffffff !important;
-  color: #111827 !important;
+  background-color: #0b1423;
+  color: #e2e8f0;
+  background-image: none;
+  border-color: #1e293b;
 }
+
+/* Inputs */
 
 .MuiOutlinedInput-root,
-.MuiInputBase-root,
-.MuiTextField-root {
-  background: #ffffff !important;
+.MuiInputBase-root {
+  color: #e2e8f0;
+  background-color: #0b1423;
 }
 
-.MuiInputBase-input,
-.MuiInputBase-inputMultiline,
-textarea {
-  color: #111827 !important;
+.MuiOutlinedInput-notchedOutline {
+  border-color: #334155;
 }
 
-.MuiInputBase-input::placeholder,
-textarea::placeholder {
-  color: #6b7280 !important;
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #64748b;
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #22d3ee;
+  border-width: 1px;
+}
+
+.MuiInputBase-input {
+  color: #e2e8f0;
+}
+
+.MuiInputBase-input::placeholder {
+  color: #64748b;
   opacity: 1;
 }
 
 .MuiInputLabel-root {
-  color: #374151 !important;
+  color: #94a3b8;
 }
 
-.MuiOutlinedInput-notchedOutline {
-  border-color: #cbd5e1 !important;
+.MuiInputLabel-root.Mui-focused {
+  color: #22d3ee;
+}
+
+/* Tables */
+
+.MuiTableCell-root {
+  color: #cbd5e1;
+  border-bottom-color: #1e293b;
+}
+
+.MuiTableHead-root .MuiTableCell-root {
+  color: #94a3b8;
+  font-weight: 700;
+  background-color: #0b1423;
+}
+
+/* Dialogs and menus */
+
+.MuiDialog-paper,
+.MuiMenu-paper,
+.MuiPopover-paper {
+  background-color: #0b1423 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #1e293b;
+}
+
+.MuiMenuItem-root {
+  color: #cbd5e1;
+}
+
+.MuiMenuItem-root:hover {
+  background-color: rgba(34, 211, 238, 0.08);
+}
+
+/* Buttons */
+
+.MuiButton-root {
+  text-transform: none;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.MuiButton-containedPrimary {
+  background-color: #0891b2;
+}
+
+.MuiButton-containedPrimary:hover {
+  background-color: #0e7490;
+}
+
+/* Links */
+
+a {
+  color: #22d3ee;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #67e8f9;
+}
+
+/* Focus accessibility */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 3px;
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
 }

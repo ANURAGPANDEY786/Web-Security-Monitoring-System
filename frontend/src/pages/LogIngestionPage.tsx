@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, type ReactNode } from "react";
 
 import {
     Alert,
@@ -6,31 +7,70 @@ import {
     Button,
     Card,
     CardContent,
+    Chip,
+    CircularProgress,
     Grid,
     MenuItem,
+    Divider,
+    Paper,
+    Stack,
     TextField,
     Typography,
 } from "@mui/material";
+
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import SendIcon from "@mui/icons-material/Send";
+import TerminalIcon from "@mui/icons-material/Terminal";
+import SecurityIcon from "@mui/icons-material/Security";
+import DescriptionIcon from "@mui/icons-material/Description";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 
 import AppLayout from "../components/layout/AppLayout";
 import { scenarios } from "../data/demoLogScenarios";
 import { ingestBulkLogs, ingestSingleLog } from "../services/logIngestion";
 
-const textFieldSx = {
-    mb: 2,
+const C = {
+    bg: "#070d18",
+    card: "#0b1423",
+    border: "#1e293b",
+    text: "#e2e8f0",
+    muted: "#94a3b8",
+    cyan: "#22d3ee",
+    green: "#34d399",
+    red: "#fb7185",
+    orange: "#fb923c",
+};
+
+const selectSx = {
     "& .MuiOutlinedInput-root": {
-        backgroundColor: "#ffffff",
-        color: "#111827",
+        bgcolor: "#080f1c",
+        color: C.text,
+        borderRadius: 2,
+        "& fieldset": { borderColor: C.border },
+        "&:hover fieldset": { borderColor: "#475569" },
+        "&.Mui-focused fieldset": { borderColor: C.cyan },
     },
-    "& .MuiInputBase-input": {
-        color: "#111827",
+    "& .MuiInputLabel-root": { color: C.muted },
+    "& .MuiInputLabel-root.Mui-focused": { color: C.cyan },
+    "& .MuiSvgIcon-root": { color: C.muted },
+};
+
+const editorSx = {
+    "& .MuiOutlinedInput-root": {
+        bgcolor: "#050a12",
+        color: "#86efac",
+        borderRadius: 2,
+        alignItems: "flex-start",
+        fontFamily: "monospace",
+        fontSize: 12,
+        lineHeight: 1.8,
+        "& fieldset": { borderColor: C.border },
+        "&:hover fieldset": { borderColor: "#475569" },
+        "&.Mui-focused fieldset": { borderColor: C.cyan },
     },
     "& .MuiInputBase-input::placeholder": {
-        color: "#6b7280",
+        color: "#64748b",
         opacity: 1,
-    },
-    "& .MuiOutlinedInput-notchedOutline": {
-        borderColor: "#475569",
     },
 };
 
@@ -112,10 +152,14 @@ export default function LogIngestionPage() {
     const handleFileUpload = async (file: File | null) => {
         if (!file) return;
 
-        const text = await file.text();
-        setBulkLogs(text);
-        setSelectedBulkExample("");
-        resetMessages();
+        try {
+            const text = await file.text();
+            setBulkLogs(text);
+            setSelectedBulkExample("");
+            resetMessages();
+        } catch {
+            setError("Unable to read the selected file.");
+        }
     };
 
     const handleSingleExampleChange = (scenarioName: string) => {
@@ -144,195 +188,554 @@ export default function LogIngestionPage() {
         }
     };
 
+    const bulkLineCount = bulkLogs
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean).length;
+
     return (
         <AppLayout title="Log Ingestion">
-            <Box sx={{ width: "100%" }}>
-                <Typography variant="body1" sx={{ color: "#d1d5db", mb: 3 }}>
-                    Choose a built-in demo log or paste your own parser-supported logs.
-                    Built-in examples are designed to trigger events, alerts, incidents,
-                    MITRE enrichment, and IOC matching.
-                </Typography>
+            <Stack spacing={3}>
+                {/* PAGE HEADER */}
+                <Box>
+                    <Typography
+                        sx={{
+                            color: "#60a5fa",
+                            fontSize: 12,
+                            letterSpacing: 1,
+                            mb: 1,
+                        }}
+                    >
+                        SECURITY OPERATIONS / DATA INGESTION
+                    </Typography>
 
+                    <Typography
+                        sx={{
+                            color: "#f8fafc",
+                            fontSize: 28,
+                            fontWeight: 900,
+                        }}
+                    >
+                        Log Ingestion
+                    </Typography>
+
+                    <Typography
+                        sx={{
+                            color: C.muted,
+                            fontSize: 13,
+                            mt: 0.7,
+                            maxWidth: 750,
+                        }}
+                    >
+                        Ingest individual security logs or bulk detection scenarios
+                        into your SIEM-Lite monitoring pipeline.
+                    </Typography>
+                </Box>
+
+                {/* STATUS */}
                 {successCount !== null && (
-                    <Alert severity="success" sx={{ mb: 3 }}>
-                        ✔ Logs successfully ingested. Created: {successCount} Security Events.
-                        Refresh Dashboard, Events, Alerts and Incidents to view results.
+                    <Alert
+                        severity="success"
+                        icon={<CheckCircleOutlineIcon />}
+                        sx={{
+                            bgcolor: "rgba(16,185,129,0.10)",
+                            color: "#a7f3d0",
+                            border: "1px solid rgba(52,211,153,0.25)",
+                            "& .MuiAlert-icon": { color: C.green },
+                        }}
+                    >
+                        <Typography sx={{ fontWeight: 700 }}>
+                            Logs successfully ingested.
+                        </Typography>
+                        <Typography sx={{ fontSize: 13 }}>
+                            Created: {successCount} Security Events. Refresh Dashboard,
+                            Events, Alerts and Incidents to view the results.
+                        </Typography>
                     </Alert>
                 )}
 
                 {error && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
+                    <Alert
+                        severity="error"
+                        sx={{
+                            bgcolor: "rgba(251,113,133,0.08)",
+                            color: "#fecdd3",
+                            border: "1px solid rgba(251,113,133,0.25)",
+                        }}
+                    >
                         {error}
                     </Alert>
                 )}
 
+                {/* INGESTION PANELS */}
                 <Grid container spacing={3}>
+                    {/* SINGLE LOG */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Card sx={{ bgcolor: "#111827", color: "#e5e7eb" }}>
-                            <CardContent>
-                                <Typography variant="h6" sx={{ mb: 1 }}>
-                                    Single Log
+                        <IngestionCard
+                            title="Single Log"
+                            subtitle="Submit one parser-supported security log."
+                            icon={<DescriptionIcon />}
+                            tag="INDIVIDUAL EVENT"
+                        >
+                            <ScenarioSelector
+                                label="Choose Single Log Example"
+                                value={selectedSingleExample}
+                                onChange={handleSingleExampleChange}
+                                examples={singleLogExamples}
+                            />
+
+                            {selectedSingleScenario && (
+                                <ScenarioInfo scenario={selectedSingleScenario} />
+                            )}
+
+                            <EditorLabel
+                                title="LOG INPUT"
+                                subtitle="Paste or edit your log entry"
+                            />
+
+                            <TextField
+                                fullWidth
+                                multiline
+                                minRows={9}
+                                maxRows={15}
+                                value={singleLog}
+                                onChange={(e) => setSingleLog(e.target.value)}
+                                placeholder="Paste one parser-supported log line here..."
+                                sx={editorSx}
+                            />
+
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    mt: 1,
+                                    mb: 2.5,
+                                }}
+                            >
+                                <Typography sx={{ color: C.muted, fontSize: 11 }}>
+                                    Single event submission
                                 </Typography>
 
-                                <Typography variant="body2" sx={{ color: "#9ca3af", mb: 2 }}>
-                                    Select one built-in example or paste one log line manually.
-                                </Typography>
-
-                                <TextField
-                                    select
-                                    fullWidth
-                                    label="Choose Single Log Example"
-                                    value={selectedSingleExample}
-                                    onChange={(e) => handleSingleExampleChange(e.target.value)}
-                                    sx={textFieldSx}
-                                >
-                                    <MenuItem value="">
-                                        Select a built-in single log example
-                                    </MenuItem>
-
-                                    {singleLogExamples.map((scenario) => (
-                                        <MenuItem key={scenario.name} value={scenario.name}>
-                                            {scenario.name} - {scenario.severity}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-
-                                {selectedSingleScenario && (
-                                    <Box
-                                        sx={{
-                                            mb: 2,
-                                            p: 2,
-                                            border: "1px solid #374151",
-                                            borderRadius: 1,
-                                            bgcolor: "#1f2937",
-                                        }}
-                                    >
-                                        <Typography variant="body2" sx={{ color: "#facc15", fontWeight: 600 }}>
-                                            Severity: {selectedSingleScenario.severity}
-                                        </Typography>
-
-                                        <Typography variant="body2" sx={{ color: "#60a5fa", fontWeight: 600 }}>
-                                            MITRE ATT&CK: {selectedSingleScenario.mitre}
-                                        </Typography>
-
-                                        <Typography variant="body2" sx={{ color: "#d1d5db", mt: 1 }}>
-                                            {selectedSingleScenario.description}
-                                        </Typography>
-                                    </Box>
-                                )}
-
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    minRows={8}
-                                    value={singleLog}
-                                    onChange={(e) => setSingleLog(e.target.value)}
-                                    placeholder="Paste one parser-supported log line here..."
-                                    sx={textFieldSx}
+                                <Chip
+                                    size="small"
+                                    label={`${singleLog.trim() ? 1 : 0} log`}
+                                    sx={{
+                                        color: C.cyan,
+                                        bgcolor: "rgba(34,211,238,0.08)",
+                                    }}
                                 />
+                            </Box>
+
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                startIcon={
+                                    loading ? (
+                                        <CircularProgress size={17} color="inherit" />
+                                    ) : (
+                                        <SendIcon />
+                                    )
+                                }
+                                onClick={submitSingleLog}
+                                disabled={loading}
+                                sx={primaryButtonSx}
+                            >
+                                {loading ? "Submitting..." : "Submit Single Log"}
+                            </Button>
+                        </IngestionCard>
+                    </Grid>
+
+                    {/* BULK LOGS */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <IngestionCard
+                            title="Bulk Logs"
+                            subtitle="Upload multiple events or use a detection scenario."
+                            icon={<TerminalIcon />}
+                            tag="BATCH INGESTION"
+                        >
+                            <ScenarioSelector
+                                label="Choose Detection Scenario"
+                                value={selectedBulkExample}
+                                onChange={handleBulkExampleChange}
+                                examples={bulkLogExamples}
+                            />
+
+                            {selectedBulkScenario && (
+                                <ScenarioInfo scenario={selectedBulkScenario} />
+                            )}
+
+                            <EditorLabel
+                                title="BULK LOG INPUT"
+                                subtitle="One log entry per line"
+                            />
+
+                            <TextField
+                                fullWidth
+                                multiline
+                                minRows={9}
+                                maxRows={15}
+                                value={bulkLogs}
+                                onChange={(e) => setBulkLogs(e.target.value)}
+                                placeholder={"Paste multiple logs here...\nOne log per line"}
+                                sx={editorSx}
+                            />
+
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    mt: 1,
+                                    mb: 2.5,
+                                }}
+                            >
+                                <Typography sx={{ color: C.muted, fontSize: 11 }}>
+                                    TXT file or manual input
+                                </Typography>
+
+                                <Chip
+                                    size="small"
+                                    label={`${bulkLineCount} logs`}
+                                    sx={{
+                                        color: C.cyan,
+                                        bgcolor: "rgba(34,211,238,0.08)",
+                                    }}
+                                />
+                            </Box>
+
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1.5}
+                            >
+                                <Button
+                                    fullWidth
+                                    variant="contained"
+                                    startIcon={
+                                        loading ? (
+                                            <CircularProgress size={17} color="inherit" />
+                                        ) : (
+                                            <SendIcon />
+                                        )
+                                    }
+                                    onClick={submitBulkLogs}
+                                    disabled={loading}
+                                    sx={primaryButtonSx}
+                                >
+                                    {loading ? "Submitting..." : "Submit Bulk Logs"}
+                                </Button>
 
                                 <Button
-                                    variant="contained"
-                                    onClick={submitSingleLog}
+                                    fullWidth
+                                    variant="outlined"
+                                    component="label"
+                                    startIcon={<UploadFileIcon />}
                                     disabled={loading}
+                                    sx={{
+                                        minHeight: 44,
+                                        color: C.cyan,
+                                        borderColor: "rgba(34,211,238,0.35)",
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        "&:hover": {
+                                            borderColor: C.cyan,
+                                            bgcolor: "rgba(34,211,238,0.07)",
+                                        },
+                                    }}
                                 >
-                                    Submit Single Log
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <Card sx={{ bgcolor: "#111827", color: "#e5e7eb" }}>
-                            <CardContent>
-                                <Typography variant="h6" sx={{ mb: 1 }}>
-                                    Bulk Logs / Detection Scenarios
-                                </Typography>
-
-                                <Typography variant="body2" sx={{ color: "#9ca3af", mb: 2 }}>
-                                    Select a built-in detection scenario, upload a TXT file, or paste
-                                    multiple logs manually.
-                                </Typography>
-
-                                <TextField
-                                    select
-                                    fullWidth
-                                    label="Choose Detection Scenario"
-                                    value={selectedBulkExample}
-                                    onChange={(e) => handleBulkExampleChange(e.target.value)}
-                                    sx={textFieldSx}
-                                >
-                                    <MenuItem value="">
-                                        Select a built-in detection scenario
-                                    </MenuItem>
-
-                                    {bulkLogExamples.map((scenario) => (
-                                        <MenuItem key={scenario.name} value={scenario.name}>
-                                            {scenario.name} - {scenario.severity}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-
-                                {selectedBulkScenario && (
-                                    <Box
-                                        sx={{
-                                            mb: 2,
-                                            p: 2,
-                                            border: "1px solid #374151",
-                                            borderRadius: 1,
-                                            bgcolor: "#1f2937",
+                                    Upload TXT File
+                                    <input
+                                        hidden
+                                        type="file"
+                                        accept=".txt,text/plain"
+                                        onChange={(e) => {
+                                            handleFileUpload(e.target.files?.[0] ?? null);
+                                            e.target.value = "";
                                         }}
-                                    >
-                                        <Typography variant="body2" sx={{ color: "#facc15", fontWeight: 600 }}>
-                                            Severity: {selectedBulkScenario.severity}
-                                        </Typography>
-
-                                        <Typography variant="body2" sx={{ color: "#60a5fa", fontWeight: 600 }}>
-                                            MITRE ATT&CK: {selectedBulkScenario.mitre}
-                                        </Typography>
-
-                                        <Typography variant="body2" sx={{ color: "#d1d5db", mt: 1 }}>
-                                            {selectedBulkScenario.description}
-                                        </Typography>
-                                    </Box>
-                                )}
-
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    minRows={8}
-                                    value={bulkLogs}
-                                    onChange={(e) => setBulkLogs(e.target.value)}
-                                    placeholder="Paste multiple logs here, one log per line..."
-                                    sx={textFieldSx}
-                                />
-
-                                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                                    <Button
-                                        variant="contained"
-                                        onClick={submitBulkLogs}
-                                        disabled={loading}
-                                    >
-                                        Submit Bulk Logs
-                                    </Button>
-
-                                    <Button variant="outlined" component="label">
-                                        Upload Your Own .txt
-                                        <input
-                                            hidden
-                                            type="file"
-                                            accept=".txt,text/plain"
-                                            onChange={(e) =>
-                                                handleFileUpload(e.target.files?.[0] ?? null)
-                                            }
-                                        />
-                                    </Button>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                                    />
+                                </Button>
+                            </Stack>
+                        </IngestionCard>
                     </Grid>
                 </Grid>
-            </Box>
+
+                {/* INFORMATION FOOTER */}
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 2.5,
+                        bgcolor: "rgba(34,211,238,0.035)",
+                        border: "1px solid rgba(34,211,238,0.15)",
+                        borderRadius: 3,
+                    }}
+                >
+                    <Stack
+                        direction="row"
+                        spacing={1.5}
+                        sx={{ alignItems: "flex-start" }}
+                    >
+                        <SecurityIcon sx={{ color: C.cyan, mt: 0.2 }} />
+
+                        <Box>
+                            <Typography
+                                sx={{
+                                    color: "#e2e8f0",
+                                    fontSize: 13,
+                                    fontWeight: 800,
+                                    mb: 0.5,
+                                }}
+                            >
+                                Detection Pipeline
+                            </Typography>
+
+                            <Typography
+                                sx={{
+                                    color: C.muted,
+                                    fontSize: 12,
+                                    lineHeight: 1.8,
+                                }}
+                            >
+                                Built-in examples are designed to trigger events,
+                                alerts, incidents, MITRE enrichment and IOC matching
+                                according to the existing backend detection pipeline.
+                            </Typography>
+                        </Box>
+                    </Stack>
+                </Paper>
+            </Stack>
         </AppLayout>
     );
 }
+
+/* REUSABLE UI COMPONENTS */
+
+function IngestionCard({
+    title,
+    subtitle,
+    icon,
+    tag,
+    children,
+}: {
+    title: string;
+    subtitle: string;
+    icon: ReactNode;
+    tag: string;
+    children: ReactNode;
+}) {
+    return (
+        <Card
+            elevation={0}
+            sx={{
+                height: "100%",
+                bgcolor: C.card,
+                color: C.text,
+                border: `1px solid ${C.border}`,
+                borderRadius: 3,
+            }}
+        >
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 }, "&:last-child": { pb: 2.5 } }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                        mb: 2.5,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 44,
+                            height: 44,
+                            flexShrink: 0,
+                            borderRadius: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: "rgba(34,211,238,0.09)",
+                            color: C.cyan,
+                        }}
+                    >
+                        {icon}
+                    </Box>
+
+                    <Box sx={{ flexGrow: 1 }}>
+                        <Typography
+                            sx={{
+                                color: "#f8fafc",
+                                fontSize: 18,
+                                fontWeight: 800,
+                            }}
+                        >
+                            {title}
+                        </Typography>
+
+                        <Typography
+                            sx={{
+                                color: C.muted,
+                                fontSize: 12,
+                                mt: 0.4,
+                            }}
+                        >
+                            {subtitle}
+                        </Typography>
+                    </Box>
+
+                    <Chip
+                        label={tag}
+                        size="small"
+                        sx={{
+                            display: { xs: "none", sm: "flex" },
+                            color: C.cyan,
+                            bgcolor: "rgba(34,211,238,0.07)",
+                            fontSize: 9,
+                            fontWeight: 800,
+                        }}
+                    />
+                </Box>
+
+                <Divider sx={{ borderColor: C.border, mb: 2.5 }} />
+
+                {children}
+            </CardContent>
+        </Card>
+    );
+}
+
+function ScenarioSelector({
+    label,
+    value,
+    onChange,
+    examples,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    examples: typeof scenarios;
+}) {
+    return (
+        <TextField
+            select
+            fullWidth
+            label={label}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            sx={{ ...selectSx, mb: 2.5 }}
+        >
+            <MenuItem value="">Select a built-in example</MenuItem>
+
+            {examples.map((scenario) => (
+                <MenuItem key={scenario.name} value={scenario.name}>
+                    {scenario.name} - {scenario.severity}
+                </MenuItem>
+            ))}
+        </TextField>
+    );
+}
+
+function ScenarioInfo({
+    scenario,
+}: {
+    scenario: (typeof scenarios)[number];
+}) {
+    return (
+        <Paper
+            elevation={0}
+            sx={{
+                p: 2,
+                mb: 2.5,
+                bgcolor: "#080f1c",
+                border: `1px solid ${C.border}`,
+                borderLeft: `3px solid ${C.orange}`,
+                borderRadius: 2,
+            }}
+        >
+            <Stack
+                direction="row"
+                spacing={1}
+                useFlexGap
+                sx={{ mb: 1.5, flexWrap: "wrap" }}
+            >
+                <Chip
+                    size="small"
+                    label={`Severity: ${scenario.severity}`}
+                    sx={{
+                        color: C.orange,
+                        bgcolor: "rgba(251,146,60,0.09)",
+                    }}
+                />
+
+                <Chip
+                    size="small"
+                    label={`MITRE: ${scenario.mitre}`}
+                    sx={{
+                        color: "#60a5fa",
+                        bgcolor: "rgba(96,165,250,0.09)",
+                    }}
+                />
+            </Stack>
+
+            <Typography
+                sx={{
+                    color: C.muted,
+                    fontSize: 12,
+                    lineHeight: 1.7,
+                }}
+            >
+                {scenario.description}
+            </Typography>
+        </Paper>
+    );
+}
+
+function EditorLabel({
+    title,
+    subtitle,
+}: {
+    title: string;
+    subtitle: string;
+}) {
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 1,
+                gap: 1,
+            }}
+        >
+            <Typography
+                sx={{
+                    color: "#cbd5e1",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: 1,
+                }}
+            >
+                {title}
+            </Typography>
+
+            <Typography
+                sx={{
+                    color: "#64748b",
+                    fontSize: 10,
+                }}
+            >
+                {subtitle}
+            </Typography>
+        </Box>
+    );
+}
+
+const primaryButtonSx = {
+    minHeight: 44,
+    bgcolor: "#0891b2",
+    color: "#ecfeff",
+    textTransform: "none",
+    fontWeight: 800,
+    boxShadow: "none",
+    "&:hover": {
+        bgcolor: "#0e7490",
+        boxShadow: "none",
+    },
+};

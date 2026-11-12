@@ -49,10 +49,11 @@ export interface MitreStatistic {
     count: number;
 }
 
+
 export interface DashboardTimelinePoint {
     date: string;
-    alertCount: number;
-    eventCount: number;
+    alerts: number;
+    events: number;
 }
 
 export interface IocStatistics {
