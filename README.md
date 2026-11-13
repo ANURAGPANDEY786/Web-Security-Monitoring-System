@@ -1,5 +1,9 @@
 # Web Security Monitoring System (SIEM-Lite)
 
+**🚀 Live Demo:** [https://web-security-monitoring-system.vercel.app/login](https://web-security-monitoring-system.vercel.app/login)
+
+**📂 Source Code:** [GitHub Repository](https://github.com/ANURAGPANDEY786/Web-Security-Monitoring-System)
+
 A web-based Security Information and Event Management (SIEM) platform designed to ingest security logs, monitor suspicious activities, and scan web application URLs for potential security vulnerabilities.
 
 This project is an extended and customized implementation based on an existing SIEM-Lite project, with additional backend development, MySQL integration, Docker containerization, and OWASP ZAP integration.
