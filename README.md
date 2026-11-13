@@ -1,288 +1,134 @@
-# SIEM-Lite
+# Web Security Monitoring System (SIEM-Lite)
 
-> A modern Security Information and Event Management (SIEM) platform built with **Spring Boot**, **React**, and **TypeScript**.
+A web-based Security Information and Event Management (SIEM) platform designed to ingest security logs, monitor suspicious activities, and scan web application URLs for potential security vulnerabilities.
 
----
-
-## Overview
-
-SIEM-Lite simulates the core workflow of a modern Security Operations Center (SOC), demonstrating how raw security logs are transformed into actionable intelligence through parsing, detection rules, threat intelligence enrichment, alert generation, incident correlation, and analyst workflows.
-
-The project is a practical cybersecurity portfolio application inspired by enterprise SIEM platforms such as Microsoft Sentinel, Splunk Enterprise Security, IBM QRadar, and Elastic Security. Rather than focusing on log storage alone, SIEM-Lite emphasizes the complete detection pipeline — from ingestion through investigation — while providing a clean, responsive web interface for analysts.
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Architecture](#architecture)
-- [Detection Pipeline](#detection-pipeline)
-- [Screenshots](#screenshots)
-- [Getting Started](#getting-started)
-- [Detection Rules](#detection-rules)
-- [MITRE ATT&CK Integration](#mitre-attck-integration)
-- [Threat Intelligence](#threat-intelligence)
-- [Supported Log Formats](#supported-log-formats)
-- [Future Improvements](#future-improvements)
-- [Acknowledgments](#acknowledgments)
-- [License](#license)
-
----
+This project is an extended and customized implementation based on an existing SIEM-Lite project, with additional backend development, MySQL integration, Docker containerization, and OWASP ZAP integration.
 
 ## Features
 
-### Authentication & Security
+### 1. Log Ingestion & Security Monitoring
 
-- JWT-based authentication with Spring Security
-- Protected REST API endpoints
+The system supports collecting security logs through log ingestion workflows.
 
-### Log Ingestion
+- **Self-Uploaded Logs:** Upload log files for ingestion and security analysis.
+- **SSH Authentication Logs:** Ingest authentication events, including failed SSH login attempts.
+- **Security Event Monitoring:** Track and analyze ingested security events.
+- **Suspicious Activity Monitoring:** Identify repeated failed login attempts and potential brute-force activity.
+- **Database Storage:** Persist security events in MySQL.
+- **Dashboard:** View security monitoring information and event activity.
 
-- Single and bulk log ingestion
-- Guided detection scenarios for rapid demonstrations
-- Custom `.txt` log file support
-- Automatic log parsing and normalization
+### 2. URL Vulnerability Scanner
 
-### Detection Engine
+An integrated URL scanning module powered by OWASP ZAP.
 
-- Failed Login and Successful Login detection
-- Brute Force and Aggressive Brute Force detection
-- Password Spray and Account Compromise detection
-- Privilege Escalation detection
-- Port Scan detection
-- IOC Match detection
+- Submit a target URL through the scanner interface.
+- Perform automated web application vulnerability scans.
+- Integrate the Spring Boot backend with OWASP ZAP.
+- Identify potential web security vulnerabilities.
+- Scan for issues such as:
+  - SQL Injection (SQLi)
+  - Cross-Site Scripting (XSS)
 
-### Threat Intelligence
+### 3. Authentication & Authorization
 
-- Indicator of Compromise database
-- Automatic IOC matching
-- Threat source attribution
-- Malware family tracking
-- Confidence scoring
+- User registration and login.
+- JWT-based authentication.
+- Spring Security integration.
+- Role-based access control.
 
-### Alert Management
+### 4. Database Integration
 
-- Risk scoring and severity classification
-- MITRE ATT&CK mapping
-- Analyst assignment
-- Status tracking
-- Investigation notes
-
-### Incident Management
-
-- Automatic alert correlation into incidents
-- Incident tracking
-- Analyst workflow support
-
-### Dashboard
-
-- Security event, alert, and incident metrics
-- Severity and event type distribution charts
-- MITRE ATT&CK and threat intelligence breakdowns
-- Recent activity feed
-
-### Audit Logging
-
-- Analyst action history
-- Investigation audit trail
-
----
+- MySQL 8.4 for persistent data storage.
+- Store security events and application data.
+- Docker-based MySQL deployment.
+- Persistent database storage using Docker volumes.
 
 ## Technology Stack
 
-### Backend
-
-| Technology | Purpose |
+| Category | Technologies |
 |---|---|
-| Java 25 | Runtime |
-| Spring Boot | Application framework |
-| Spring Security + JWT | Authentication |
-| Spring Data JPA + Hibernate | Data persistence |
-| H2 Database | In-memory database |
-| Maven | Build tool |
-| Swagger / OpenAPI | API documentation |
+| Frontend | React, TypeScript, Vite |
+| Backend | Java, Spring Boot |
+| Database | MySQL 8.4 |
+| Authentication | Spring Security, JWT |
+| Vulnerability Scanner | OWASP ZAP |
+| Containerization | Docker |
+| Deployment | Vercel, Azure Virtual Machine |
+| Web Server | Nginx |
+| HTTPS | Let's Encrypt, Certbot |
 
-### Frontend
-
-| Technology | Purpose |
-|---|---|
-| React + TypeScript | UI framework |
-| Vite | Build tooling |
-| Material UI | Component library |
-| Axios | HTTP client |
-| React Router | Client-side routing |
-
----
-
-## Architecture
-
-SIEM-Lite follows a modular pipeline that transforms raw log data into actionable security incidents.
+## System Architecture
 
 ```text
-+----------------------+
-|    Log Sources       |
-| (SSH, Network, etc.) |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|    Log Ingestion     |
-|  Single / Bulk Logs  |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|     Log Parser       |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|   Security Events    |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|  Detection Engine    |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| Threat Intelligence  |
-|    IOC Matching      |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|   Alert Generation   |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| Correlation Engine   |
-+----------+-----------+
-           |
-           v
-+----------------------+
-|      Incidents       |
-+----------+-----------+
-           |
-           v
-+----------------------+
-| Dashboard & Audit Log|
-+----------------------+
+                         User
+                           |
+                           v
+                 React + TypeScript
+                           |
+                       REST APIs
+                           |
+                           v
+                 Spring Boot Backend
+                    /           \
+                   /             \
+                  v               v
+            Log Ingestion      URL Scanner
+                  |               |
+          +-------+-------+       v
+          |               |   OWASP ZAP
+          v               v
+     Uploaded Logs    SSH/Auth Logs
+          |               |
+          +-------+-------+
+                  |
+                  v
+              MySQL DB
 ```
 
----
+## Docker Implementation
 
-## Detection Pipeline
+Docker is used to run the backend infrastructure in separate containers.
 
-Every log follows the same consistent processing flow, ensuring complete traceability from the original log entry through analyst investigation.
+- **Spring Boot:** Backend application container.
+- **MySQL:** Database container.
+- **OWASP ZAP:** Vulnerability scanner container.
+- **Docker Network:** Private communication between containers.
+- **Docker Volume:** Persistent database storage.
+- **Restart Policies:** Automatic container restart configuration.
 
-```text
-Raw Log
-   ↓
-Parser
-   ↓
-Security Event
-   ↓
-Detection Engine
-   ↓
-Threat Intelligence / IOC Matching
-   ↓
-Alert
-   ↓
-Correlation Engine
-   ↓
-Incident
-   ↓
-Dashboard
-   ↓
-Audit Log
-```
+## Deployment Architecture
 
----
+The application is deployed using the following infrastructure:
 
-## Screenshots
+| Component | Deployment |
+|---|---|
+| Frontend | Vercel |
+| Backend | Azure Virtual Machine |
+| Database | MySQL Docker Container |
+| Scanner | OWASP ZAP Docker Container |
+| Reverse Proxy | Nginx |
+| Secure Connection | HTTPS / Certbot |
 
-### Dashboard
+## Project Workflow
 
-The SOC dashboard gives analysts a real-time overview of security events, alerts, incidents, MITRE ATT&CK distribution, threat intelligence metrics, and recent activity.
-
-![Dashboard](screenshots/dashboard.png)
-
-### Log Ingestion
-
-Supports single log ingestion, guided detection scenarios, and bulk processing via uploaded `.txt` files.
-
-![Log Ingestion](screenshots/log-ingestion.png)
-
-### Security Events
-
-Parsed events are normalized and displayed with event type, source IP, username, timestamp, and raw log message.
-
-![Security Events](screenshots/events.png)
-
-### Alerts
-
-Alerts include severity, risk score, MITRE ATT&CK mappings, analyst assignment, and investigation notes.
-
-![Alerts](screenshots/alerts.png)
-
-### Threat Intelligence
-
-The Threat Intelligence module manages IOCs with confidence scoring, malware family attribution, and campaign tracking.
-
-![Threat Intelligence](screenshots/threat-intelligence.png)
-
-### Incidents
-
-Related alerts are automatically correlated into incidents, giving analysts a higher-level view of malicious activity.
-
-![Incidents](screenshots/incidents.png)
-
-### Audit Logs
-
-All analyst actions are recorded to provide accountability and investigation traceability.
-
-![Audit Logs](screenshots/audit-logs.png)
-
----
+1. Users access the web application through the frontend.
+2. Security logs are uploaded or ingested through the Log Ingestion module.
+3. The Spring Boot backend processes and stores security events in MySQL.
+4. Users can submit a target URL through the URL Scanner.
+5. The backend communicates with OWASP ZAP to execute the vulnerability scan.
+6. Scan results are made available through the application interface.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Java 25
+- Java 21
+- Node.js and npm
+- MySQL 8.4
+- Docker
 - Maven
-- Node.js 24+
-- npm
-- Git
 
-### Clone the Repository
-
-```bash
-git clone https://github.com/guty09/siem-lite.git
-cd siem-lite
-```
-
-### Start the Backend
-
-From the project root:
-
-```bash
-mvn spring-boot:run
-```
-
-The backend will be available at:
-
-```text
-http://localhost:8081
-```
-
-### Start the Frontend
-
-In a separate terminal:
+### Run the Frontend
 
 ```bash
 cd frontend
@@ -290,142 +136,51 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at:
+### Run the Backend
 
-```text
-http://localhost:5173
+Configure the required database and application environment variables, then run:
+
+```bash
+cd backend
+./mvnw spring-boot:run
 ```
 
-### Swagger API Documentation
+On Windows:
 
-With the backend running, visit:
-
-```text
-http://localhost:8081/swagger-ui/index.html
+```powershell
+.\mvnw.cmd spring-boot:run
 ```
+
+**Note:** Configure MySQL and OWASP ZAP connection settings before starting the backend. Exact configuration may vary according to your local environment.
+
+## Project Objective
+
+The objective of this project is to build practical experience in:
+
+- Security monitoring and log analysis.
+- Backend development using Java and Spring Boot.
+- Web vulnerability scanning.
+- Database integration and persistence.
+- Authentication and authorization.
+- Docker-based application deployment.
+- Cloud hosting and infrastructure configuration.
+
+## Acknowledgement
+
+This project is based on and extends the existing [SIEM-Lite repository](https://github.com/guty09/siem-lite).
+
+The original project has been customized and extended with additional features, integrations, and deployment configurations.
+
+## Author
+
+**Anurag Pandey**
+
+B.Tech — Computer Science and Engineering  
+Institute of Engineering and Technology, Lucknow
+
+- GitHub: [ANURAGPANDEY786](https://github.com/ANURAGPANDEY786)
+- Project Repository: [Web Security Monitoring System](https://github.com/ANURAGPANDEY786/Web-Security-Monitoring-System)
 
 ---
 
-## Detection Rules
-
-| Detection Rule | Severity | Creates Incident |
-|---|---|:---:|
-| Failed Login | Medium | ❌ |
-| Successful Login | Informational | ❌ |
-| Brute Force | High | ❌ |
-| Aggressive Brute Force | Critical | ✅ |
-| Password Spray | High | ❌ |
-| Account Compromise | Critical | ✅ |
-| Privilege Escalation | Critical | ✅ |
-| Port Scan | High | ❌ |
-| IOC Match | Critical | ✅ |
-
----
-
-## MITRE ATT&CK Integration
-
-SIEM-Lite enriches supported detections with MITRE ATT&CK tactics and techniques to provide analysts with additional investigation context.
-
-MITRE ATT&CK mappings are displayed within alerts and dashboard visualizations, helping analysts understand attacker behavior and prioritize response efforts.
-
-Examples of detections enriched with MITRE ATT&CK context include:
-
-- Brute Force
-- Password Spray
-- Account Compromise
-- Privilege Escalation
-- IOC Match
-
----
-
-## Threat Intelligence
-
-The Threat Intelligence module maintains Indicators of Compromise and automatically checks parsed security events against known malicious indicators.
-
-When an IOC match is detected, SIEM-Lite generates a high-severity alert and correlates it into an incident.
-
-### Seeded Demo IOC IPs
-
-- `192.168.1.200`
-- `45.77.10.15`
-- `203.0.113.50`
-- `198.51.100.25`
-
-### Supported IOC Types
-
-- `IP`
-- `DOMAIN`
-- `URL`
-- `FILE_HASH`
-
----
-
-## Supported Log Formats
-
-### Failed Login
-
-```text
-Jul 01 18:45:12 web01 sshd[1234]: Failed password for admin from 192.168.1.100 port 51422 ssh2
-```
-
-### Successful Login
-
-```text
-Accepted password for admin from 192.168.1.100
-```
-
-### Privilege Escalation
-
-```text
-sudo command executed by admin from 192.168.1.104
-```
-
-### Connection Attempt
-
-```text
-Connection attempt from 192.168.1.50 to port 22
-```
-
-### IOC Demo Logs
-
-```text
-Jul 01 19:00:00 web01 sshd[9001]: Failed password for admin from 192.168.1.200 port 60001 ssh2
-Jul 01 19:05:10 web01 sshd[9002]: Failed password for backup from 45.77.10.15 port 52331 ssh2
-Jul 01 19:10:14 web01 sshd[9003]: Failed password for root from 203.0.113.50 port 40022 ssh2
-Jul 01 19:15:44 web01 sshd[9004]: Failed password for deploy from 198.51.100.25 port 44444 ssh2
-```
-
-Expected IOC flow:
-
-```text
-Raw Log
-   ↓
-Security Event
-   ↓
-IOC_MATCH Alert
-   ↓
-IOC_MATCH Incident
-```
-
----
-
-## Future Improvements
-
-- Support for additional log sources such as Syslog and Windows Event Logs
-- Persistent database support with PostgreSQL or MySQL
-- Real-time log streaming
-- Email and webhook alert notifications
-- Advanced correlation rules
-- Role-based access control
-- Dashboard customization
-- Docker Compose production deployment
-
----
-
-## Acknowledgments
-
-SIEM-Lite was inspired by enterprise SIEM platforms including Microsoft Sentinel, Splunk Enterprise Security, IBM QRadar, and Elastic Security.
-
-This project was developed as a cybersecurity portfolio application to demonstrate SOC workflows, detection engineering, threat intelligence, incident correlation, and analyst investigation concepts.
-
----
+*Developed as a practical project in security monitoring, backend engineering, and web application security.*
